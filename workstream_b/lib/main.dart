@@ -1,7 +1,6 @@
-
 import 'dart:io';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,9 +21,7 @@ class ScanScriptApp extends StatelessWidget {
       title: 'ScanScript',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2563EB),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB)),
         useMaterial3: true,
       ),
       home: const ScanScriptHomePage(),
@@ -36,8 +33,7 @@ class ScanScriptHomePage extends StatefulWidget {
   const ScanScriptHomePage({super.key});
 
   @override
-  State<ScanScriptHomePage> createState() =>
-      _ScanScriptHomePageState();
+  State<ScanScriptHomePage> createState() => _ScanScriptHomePageState();
 }
 
 class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
@@ -70,36 +66,28 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
       });
     }
   }
-  
-  Future<void> _fetchPreprocessedImage() async {
+
+  Future<void> _fetchPreprocessedImage(int imageNumber) async {
     if (_isProcessing) return;
-    
+
     setState(() {
       _errorMessage = null;
     });
-    
+
     try {
       final uri = Uri.parse(
-        'http://192.168.0.155:8000/preprocessed-image',
-        );
+        'http://192.168.0.155:8000/preprocessed-image/$imageNumber',
+      );
 
-      final response = await http
-          .get(uri)
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Server mengembalikan status ${response.statusCode}',
-        );
+        throw Exception('Server mengembalikan status ${response.statusCode}');
       }
 
-      final directory = await Directory.systemTemp.createTemp(
-        'scanscript_',
-      );
+      final directory = await Directory.systemTemp.createTemp('scanscript_');
 
-      final imageFile = File(
-        '${directory.path}/preprocessed.png',
-      );
+      final imageFile = File('${directory.path}/preprocessed.png');
 
       await imageFile.writeAsBytes(response.bodyBytes);
 
@@ -114,12 +102,11 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
       if (!mounted) return;
 
       setState(() {
-        _errorMessage =
-            'Gagal mengambil gambar dari Workstream A: $e';
+        _errorMessage = 'Gagal mengambil gambar dari Workstream A: $e';
       });
     }
   }
-  
+
   Future<void> _exportJson() async {
     if (_result == null) return;
 
@@ -127,9 +114,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
       final jsonString = const JsonEncoder.withIndent('  ')
           .convert(_result!.toJson());
 
-      final uri = Uri.parse(
-        'http://192.168.0.155:8001/upload-json',
-      );
+      final uri = Uri.parse('http://192.168.0.155:8001/upload-json');
 
       final response = await http
           .post(
@@ -140,24 +125,19 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Server mengembalikan status ${response.statusCode}',
-        );
+        throw Exception('Server mengembalikan status ${response.statusCode}');
       }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('JSON berhasil dikirim ke laptop!'),
-        ),
+        const SnackBar(content: Text('JSON berhasil dikirim ke laptop!')),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengirim JSON: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal mengirim JSON: $e')));
     }
   }
 
@@ -212,15 +192,9 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
         backgroundColor: Colors.white,
         title: const Row(
           children: [
-            Icon(
-              Icons.document_scanner_outlined,
-              color: Color(0xFF2563EB),
-            ),
+            Icon(Icons.document_scanner_outlined, color: Color(0xFF2563EB)),
             SizedBox(width: 10),
-            Text(
-              'ScanScript',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text('ScanScript', style: TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -233,10 +207,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
               const SizedBox(height: 12),
               const Text(
                 'Ubah gambar menjadi teks',
-                style: TextStyle(
-                  fontSize: 27,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -278,10 +249,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
                         'Pilih gambar dokumen dari galeri '
                         'untuk mengenali teks di dalamnya.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.black54,
-                          height: 1.5,
-                        ),
+                        style: TextStyle(color: Colors.black54, height: 1.5),
                       ),
                     ] else ...[
                       ClipRRect(
@@ -312,7 +280,37 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: _isProcessing ? null : _fetchPreprocessedImage,
+                        onPressed: _isProcessing
+                            ? null
+                            : () async {
+                                final imageNumber = await showDialog<int>(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return SimpleDialog(
+                                      title: const Text('Pilih gambar'),
+                                      children: List.generate(10, (index) {
+                                        final number = index + 1;
+
+                                        return SimpleDialogOption(
+                                          onPressed: () {
+                                            Navigator.pop(
+                                              dialogContext,
+                                              number,
+                                            );
+                                          },
+                                          child: Text('Gambar $number'),
+                                        );
+                                      }),
+                                    );
+                                  },
+                                );
+
+                                if (!mounted) return;
+
+                                if (imageNumber != null) {
+                                  await _fetchPreprocessedImage(imageNumber);
+                                }
+                              },
                         icon: const Icon(Icons.cloud_download_outlined),
                         label: const Text('Ambil dari Workstream A'),
                       ),
@@ -322,8 +320,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed:
-                              _isProcessing ? null : _recognizeText,
+                          onPressed: _isProcessing ? null : _recognizeText,
                           icon: _isProcessing
                               ? const SizedBox(
                                   width: 18,
@@ -403,10 +400,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
                         _result!.fullText.isEmpty
                             ? 'Tidak ada teks yang terdeteksi.'
                             : _result!.fullText,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          height: 1.6,
-                        ),
+                        style: const TextStyle(fontSize: 15, height: 1.6),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -452,10 +446,7 @@ class _ScanScriptHomePageState extends State<ScanScriptHomePage> {
               const Center(
                 child: Text(
                   'ScanScript • OCR Integration',
-                  style: TextStyle(
-                    color: Colors.black45,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.black45, fontSize: 12),
                 ),
               ),
             ],
