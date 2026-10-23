@@ -1,0 +1,42 @@
+name: workstream_c
+description: "ScanScript Workstream C: UI, correction, and export."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  camera: ^0.10.6
+  image_picker: ^1.2.4
+  path_provider: ^2.1.6
+  # Jalankan `flutter pub add share_plus` kalau versi ini ditolak resolver.
+  # API yang dipakai: SharePlus.instance.share(ShareParams(...)), mulai v11.
+  share_plus: ^11.0.0
+  google_mlkit_text_recognition: ^0.17.1
+  google_fonts: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/config.json
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
