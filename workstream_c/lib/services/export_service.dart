@@ -38,6 +38,13 @@ class ExportService {
     return file;
   }
 
+  /// Bagikan teks langsung lewat share sheet (WhatsApp, email, dll),
+  Future<void> shareText(String text) async {
+    await SharePlus.instance.share(
+      ShareParams(text: text, subject: 'Hasil ScanScript'),
+    );
+  }
+
   static String _stamp(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${t.year}${two(t.month)}${two(t.day)}_${two(t.hour)}${two(t.minute)}${two(t.second)}';

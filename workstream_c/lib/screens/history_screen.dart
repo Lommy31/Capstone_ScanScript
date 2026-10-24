@@ -21,7 +21,6 @@ class _C {
   static const footerBorder = Color(0xFFF1F5F9);
   static const error = Color(0xFFBA1A1A);
   static const errorContainer = Color(0xFFFFDAD6);
-  static const onErrorContainer = Color(0xFF93000A);
   static const toast = Color(0xFF2F2E44);
 }
 
@@ -233,88 +232,102 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return ok ?? false;
   }
 
+  /// Bottom sheet "Ekspor catatan" (desain baru)
   void _showMore(ScanRecord r) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
       showDragHandle: false,
       isScrollControlled: true,
+      elevation: 24,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+          padding: const EdgeInsets.only(top: 12, bottom: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // drag handle
               Center(
                 child: Container(
-                  width: 40,
+                  width: 48,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: _C.dot,
+                    color: const Color(0xFFD1D5DB),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'OPSI CATATAN',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
-                            color: _C.primary,
+              // header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ekspor catatan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 22,
+                              height: 1.2,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                              color: const Color(0xFF111827),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          r.firstLine,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: _C.text,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Pilih cara untuk menyimpan atau membagikan teks.',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: const Color(0xFF6B7280),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  _CircleIconButton(
-                    icon: Icons.close,
-                    size: 36,
-                    iconSize: 20,
-                    tooltip: 'Tutup',
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Material(
+                      color: const Color(0xFFF3F4F6),
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(ctx),
+                        child: const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Icon(
+                            Icons.close,
+                            size: 20,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               _OptionTile(
                 icon: Icons.edit_note,
-                color: _C.primary,
-                title: 'Edit Naskah & Transkripsi',
-                subtitle: 'Koreksi kata dengan editor teks',
+                title: 'Edit naskah',
+                subtitle: 'Buka di editor untuk koreksi teks.',
                 onTap: () {
                   Navigator.pop(ctx);
                   _open(r);
                 },
               ),
               _OptionTile(
-                icon: Icons.file_download_outlined,
-                color: _C.muted,
+                icon: Icons.description_outlined,
                 title: 'Ekspor sebagai TXT',
-                subtitle: 'Simpan atau bagikan berkas teks',
+                subtitle: 'Simpan catatan sebagai berkas .txt.',
                 onTap: () {
                   Navigator.pop(ctx);
                   _share(r);
@@ -322,12 +335,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               _OptionTile(
                 icon: Icons.delete_outline,
-                color: _C.error,
-                background: _C.errorContainer,
-                titleColor: _C.error,
-                subtitleColor: _C.onErrorContainer,
-                title: 'Hapus Catatan',
-                subtitle: 'Hapus secara permanen dari perangkat',
+                iconColor: const Color(0xFFEF4444),
+                iconBackground: const Color(0xFFFEF2F2),
+                titleColor: const Color(0xFFDC2626),
+                chevronColor: const Color(0xFFFCA5A5),
+                showDivider: false,
+                title: 'Hapus catatan',
+                subtitle: 'Hapus catatan ini dari arsip.',
                 onTap: () async {
                   Navigator.pop(ctx);
                   if (await _confirmDelete(r)) _delete(r);
@@ -659,55 +673,64 @@ class _CircleIconButton extends StatelessWidget {
   }
 }
 
+/// Baris opsi di bottom sheet ekspor: ikon bulat 48px, judul + subjudul,
+/// chevron di kanan, dan garis pemisah tipis di bawah.
 class _OptionTile extends StatelessWidget {
   final IconData icon;
-  final Color color;
-  final Color? background;
+  final Color iconColor;
+  final Color iconBackground;
   final Color titleColor;
-  final Color subtitleColor;
+  final Color chevronColor;
+  final bool showDivider;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
   const _OptionTile({
     required this.icon,
-    required this.color,
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.background,
-    this.titleColor = _C.text,
-    this.subtitleColor = _C.muted,
+    this.iconColor = const Color(0xFF3B82F6),
+    this.iconBackground = const Color(0xFFEFF6FF),
+    this.titleColor = const Color(0xFF111827),
+    this.chevronColor = const Color(0xFF9CA3AF),
+    this.showDivider = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          border: showDivider
+              ? const Border(bottom: BorderSide(color: Color(0xFFF3F4F6)))
+              : null,
+        ),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: background ?? _C.chip,
-                borderRadius: BorderRadius.circular(8),
+                color: iconBackground,
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 20),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      height: 1.3,
+                      fontWeight: FontWeight.w700,
                       color: titleColor,
                     ),
                   ),
@@ -715,13 +738,15 @@ class _OptionTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: subtitleColor,
+                      fontSize: 13,
+                      color: const Color(0xFF6B7280),
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 20, color: chevronColor),
           ],
         ),
       ),

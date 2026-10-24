@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'preview_screen.dart';
 import 'scan_launcher.dart';
 
-/// Warna mengikuti mockup S02 — Camera Capture.
+/// Warna mengikuti mockup S02 — Camera Capture (tampilan clean).
 class _C {
   static const bg = Color(0xFFF1F5FC);
   static const surface = Color(0xFFFCF8FF);
@@ -28,32 +28,24 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+    with WidgetsBindingObserver {
   CameraController? _controller;
   String? _error;
-  bool _grid = false;
-  bool _auto = true;
   bool _capturing = false;
   bool _pulse = false;
   bool _toast = false;
   bool _pressed = false;
-  late final AnimationController _anim;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _anim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1250),
-    )..repeat(reverse: true);
     _initCamera();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _anim.dispose();
     _controller?.dispose();
     super.dispose();
   }
@@ -107,13 +99,6 @@ class _CameraScreenState extends State<CameraScreen>
     } catch (_) {
       if (mounted) setState(() => _error = 'Kamera tidak bisa dibuka.');
     }
-  }
-
-  Future<void> _setAuto(bool auto) async {
-    setState(() => _auto = auto);
-    try {
-      await _controller?.setFocusMode(auto ? FocusMode.auto : FocusMode.locked);
-    } catch (_) {}
   }
 
   Future<void> _capture() async {
@@ -206,9 +191,11 @@ class _CameraScreenState extends State<CameraScreen>
         children: [
           LayoutBuilder(
             builder: (context, box) {
+              // Sisakan ruang untuk area kontrol bawah (shutter + padding
+              // + safe area gesture bar).
               final viewportH = math.max(
                 240.0,
-                math.min(box.maxWidth * 4 / 3, box.maxHeight - 200),
+                math.min(box.maxWidth * 4 / 3, box.maxHeight - 164),
               );
               return Column(
                 children: [
@@ -248,12 +235,17 @@ class _CameraScreenState extends State<CameraScreen>
                           color: _C.blue,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Dokumen tertangkap • Memproses OCR...',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                        // Flexible: teks boleh mengecil/terpotong, tidak overflow
+                        Flexible(
+                          child: Text(
+                            'Dokumen tertangkap • Memproses OCR...',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],
@@ -291,73 +283,22 @@ class _CameraScreenState extends State<CameraScreen>
           fit: StackFit.expand,
           children: [
             _preview(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    _C.inverse.withValues(alpha: 0.9),
-                    Colors.transparent,
-                    _C.inverse.withValues(alpha: 0.75),
-                  ],
-                ),
-              ),
-            ),
-            if (_grid)
-              const IgnorePointer(
-                child: CustomPaint(
-                  painter: _GridPainter(),
-                  size: Size.infinite,
-                ),
-              ),
-            _laser(),
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _RoundBtn(
-                        icon: Icons.close,
-                        size: 40,
-                        iconSize: 20,
-                        bg: _C.inverse.withValues(alpha: 0.6),
-                        fg: const Color(0xFFF3EEFF),
-                        shadow: true,
-                        onTap: () => Navigator.of(context).maybePop(),
-                      ),
-                      _RoundBtn(
-                        icon: Icons.grid_on,
-                        size: 40,
-                        iconSize: 20,
-                        bg: _C.inverse.withValues(alpha: 0.6),
-                        fg: _grid
-                            ? const Color(0xFFE4DFFF)
-                            : Colors.white.withValues(alpha: 0.6),
-                        shadow: true,
-                        onTap: () => setState(() => _grid = !_grid),
-                      ),
+            // Gradient tipis atas-bawah. IgnorePointer supaya tidak menutupi
+            // tombol di dalam _preview() (mis. "Pakai kamera sistem").
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      _C.inverse.withValues(alpha: 0.9),
+                      Colors.transparent,
+                      _C.inverse.withValues(alpha: 0.75),
                     ],
                   ),
                 ),
-                Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: AspectRatio(
-                        aspectRatio: 1 / 1.38,
-                        child: _frame(),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _hintPill(),
-                ),
-              ],
+              ),
             ),
           ],
         ),
@@ -421,153 +362,6 @@ class _CameraScreenState extends State<CameraScreen>
     );
   }
 
-  Widget _laser() {
-    return IgnorePointer(
-      child: Align(
-        alignment: const Alignment(0, -0.33),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: AnimatedBuilder(
-            animation: _anim,
-            builder: (_, child) =>
-                Opacity(opacity: 1 - 0.5 * _anim.value, child: child),
-            child: Container(
-              height: 2,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.transparent, _C.blue, Colors.transparent],
-                ),
-                boxShadow: [BoxShadow(color: _C.blue, blurRadius: 12)],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _frame() {
-    return IgnorePointer(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _C.blue.withValues(alpha: 0.25),
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-          const Positioned(
-            top: -4,
-            left: -4,
-            child: _Corner(flipX: false, flipY: false),
-          ),
-          const Positioned(
-            top: -4,
-            right: -4,
-            child: _Corner(flipX: true, flipY: false),
-          ),
-          const Positioned(
-            bottom: -4,
-            left: -4,
-            child: _Corner(flipX: false, flipY: true),
-          ),
-          const Positioned(
-            bottom: -4,
-            right: -4,
-            child: _Corner(flipX: true, flipY: true),
-          ),
-          Center(
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.filter_center_focus,
-                size: 18,
-                color: _C.blue,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _hintPill() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: _C.inverse.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 15,
-            offset: Offset(0, 10),
-            spreadRadius: -3,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 8,
-            height: 8,
-            child: AnimatedBuilder(
-              animation: _anim,
-              builder: (_, _) => Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: Transform.scale(
-                      scale: 1 + _anim.value,
-                      child: Opacity(
-                        opacity: (1 - _anim.value) * 0.75,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: _C.blue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _C.blue,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Sejajarkan naskah • Pencahayaan ideal',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ---------------- Kontrol bawah ----------------
 
   Widget _controls() {
@@ -576,92 +370,27 @@ class _CameraScreenState extends State<CameraScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _modeToggle(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _SideBtn(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                SizedBox(
+                  width: 48,
+                  child: _SideBtn(
                     icon: Icons.photo_library_outlined,
                     label: 'Galeri',
                     onTap: _gallery,
                   ),
-                  _shutter(),
-                  _SideBtn(
-                    icon: Icons.filter_none,
-                    label: 'Batch',
-                    onTap: () => ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        const SnackBar(
-                          content: Text('Mode batch belum tersedia.'),
-                        ),
-                      ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _modeToggle() {
-    Widget btn(String label, bool active, VoidCallback onTap) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            color: active ? _C.blue : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: active
-                ? const [
-                    BoxShadow(
-                      color: Color(0x0D000000),
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
-              color: active ? Colors.white : _C.text,
+                ),
+                _shutter(),
+                // Spacer selebar kolom Galeri supaya shutter tetap di tengah.
+                const SizedBox(width: 48),
+              ],
             ),
           ),
         ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _C.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          btn('Auto', _auto, () => _setAuto(true)),
-          btn('Manual', !_auto, () => _setAuto(false)),
-        ],
       ),
     );
   }
@@ -755,7 +484,6 @@ class _RoundBtn extends StatelessWidget {
   final double iconSize;
   final Color bg;
   final Color fg;
-  final bool shadow;
   final VoidCallback onTap;
 
   const _RoundBtn({
@@ -765,7 +493,6 @@ class _RoundBtn extends StatelessWidget {
     required this.bg,
     required this.fg,
     required this.onTap,
-    this.shadow = false,
   });
 
   @override
@@ -776,20 +503,7 @@ class _RoundBtn extends StatelessWidget {
       child: Ink(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          color: bg,
-          shape: BoxShape.circle,
-          boxShadow: shadow
-              ? const [
-                  BoxShadow(
-                    color: Color(0x1A000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 4),
-                    spreadRadius: -1,
-                  ),
-                ]
-              : null,
-        ),
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
@@ -853,85 +567,4 @@ class _SideBtn extends StatelessWidget {
       ],
     );
   }
-}
-
-class _Corner extends StatelessWidget {
-  final bool flipX;
-  final bool flipY;
-
-  const _Corner({required this.flipX, required this.flipY});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(32, 32),
-      painter: _CornerPainter(flipX: flipX, flipY: flipY),
-    );
-  }
-}
-
-class _CornerPainter extends CustomPainter {
-  final bool flipX;
-  final bool flipY;
-
-  const _CornerPainter({required this.flipX, required this.flipY});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    if (flipX) {
-      canvas.translate(size.width, 0);
-      canvas.scale(-1, 1);
-    }
-    if (flipY) {
-      canvas.translate(0, size.height);
-      canvas.scale(1, -1);
-    }
-
-    final path = Path()
-      ..moveTo(2.5, size.height)
-      ..lineTo(2.5, 10)
-      ..quadraticBezierTo(2.5, 2.5, 10, 2.5)
-      ..lineTo(size.width, 2.5);
-
-    final glow = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round
-      ..color = _C.blue
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5
-      ..strokeCap = StrokeCap.round
-      ..color = _C.blue;
-
-    canvas.drawPath(path, glow);
-    canvas.drawPath(path, line);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _CornerPainter old) =>
-      old.flipX != flipX || old.flipY != flipY;
-}
-
-class _GridPainter extends CustomPainter {
-  const _GridPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = const Color(0xFFE9E5FF).withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-    for (var i = 1; i < 3; i++) {
-      final dx = size.width * i / 3;
-      final dy = size.height * i / 3;
-      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), p);
-      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
 }

@@ -144,15 +144,15 @@ class HomeScreen extends StatelessWidget {
                           child: Row(
                             children: [
                               Container(
-                                width: 56,
-                                height: 56,
+                                width: 48,
+                                height: 48,
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
                                   Icons.photo_camera,
-                                  size: 30,
+                                  size: 26,
                                   color: Colors.white,
                                 ),
                               ),
@@ -161,7 +161,7 @@ class HomeScreen extends StatelessWidget {
                                 child: Text(
                                   'Pindai Dokumen',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 17,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
@@ -240,7 +240,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
           // Tips
           Container(

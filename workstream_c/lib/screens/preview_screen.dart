@@ -60,7 +60,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       child: Image.file(
                         File(widget.imagePath),
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Center(
+                        errorBuilder: (_, _, _) => const Center(
                           child: Text('Gambar tidak bisa ditampilkan.'),
                         ),
                       ),
